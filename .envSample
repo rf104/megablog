@@ -1,5 +1,12 @@
-VITE_APPWRITE_URL = ""
-VITE_APPWRITE_PROJECT_ID  = ""
-VITE_APPWRITE_DATABASE_ID = ""
-VITE_APPWRITE_COLLECTION_ID = ""
-VITE_APPWRITE_BUCKET_ID = ""
+# Copy this file to ".env" and fill in the values, then restart `npm run dev`.
+
+# Supabase dashboard → Project Settings → API (or the "Connect" button)
+VITE_SUPABASE_URL = "https://your-project-ref.supabase.co"
+# Use the publishable (or legacy "anon") key, never the secret / service_role key
+VITE_SUPABASE_PUBLISHABLE_KEY = ""
+
+# Storage bucket for cover images (created by supabase/schema.sql)
+VITE_SUPABASE_BUCKET = "post-images"
+
+# TinyMCE editor key: https://www.tiny.cloud/auth/signup/
+VITE_TINY_API_KEY = ""

@@ -6,20 +6,22 @@ import { Provider } from 'react-redux'
 import store from './store/store'
 import { createBrowserRouter, RouterProvider } from 'react-router-dom'
 import { AuthLayout, Login } from './component/index.js'
-import Home  from '../src/Pages/Home.jsx'
-
+import { missingConfig } from './conf/conf.js'
+import Home from './Pages/Home.jsx'
 import AddPost from "./Pages/AddPost.jsx";
 import Signup from './Pages/Signup.jsx'
 import EditPost from "./Pages/EditPost.jsx";
-
 import Post from "./Pages/Post.jsx";
-
 import AllPosts from './Pages/AllPost.jsx';
+import NotFound from './Pages/NotFound.jsx';
+import ConfigError from './Pages/ConfigError.jsx';
+import RouteError from './Pages/RouteError.jsx';
 
 const router = createBrowserRouter([
   {
     path: "/",
     element: <App />,
+    errorElement: <RouteError />,
     children: [
         {
             path: "/",
@@ -45,7 +47,6 @@ const router = createBrowserRouter([
             path: "/all-posts",
             element: (
                 <AuthLayout authentication>
-                    {" "}
                     <AllPosts />
                 </AuthLayout>
             ),
@@ -54,7 +55,6 @@ const router = createBrowserRouter([
             path: "/add-post",
             element: (
                 <AuthLayout authentication>
-                    {" "}
                     <AddPost />
                 </AuthLayout>
             ),
@@ -63,7 +63,6 @@ const router = createBrowserRouter([
             path: "/edit-post/:slug",
             element: (
                 <AuthLayout authentication>
-                    {" "}
                     <EditPost />
                 </AuthLayout>
             ),
@@ -72,14 +71,22 @@ const router = createBrowserRouter([
             path: "/post/:slug",
             element: <Post />,
         },
+        {
+            path: "*",
+            element: <NotFound />,
+        },
     ],
 },
 ])
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
-    <Provider store={store}>
-    <RouterProvider router={router}/>
-    </Provider>
+    {missingConfig.length > 0 ? (
+      <ConfigError missing={missingConfig} />
+    ) : (
+      <Provider store={store}>
+        <RouterProvider router={router} />
+      </Provider>
+    )}
   </StrictMode>,
 )

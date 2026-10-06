@@ -1,1 +1,83 @@
 @import "tailwindcss";
+@plugin "@tailwindcss/typography";
+
+/* Class-based dark mode, toggled on <html> by useTheme */
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Fraunces", ui-serif, Georgia, serif;
+
+  /* Brand: a calm green taken from the illustrations */
+  --color-brand-50: #effaf3;
+  --color-brand-100: #d8f3e2;
+  --color-brand-200: #b4e6c9;
+  --color-brand-300: #82d2a8;
+  --color-brand-400: #4fb883;
+  --color-brand-500: #2d9c67;
+  --color-brand-600: #1f7e52;
+  --color-brand-700: #1a6543;
+  --color-brand-800: #175137;
+  --color-brand-900: #14432f;
+  --color-brand-950: #0a2519;
+
+  /* Surfaces */
+  --color-paper: #fafaf7;
+  --color-ink: #0c0f0e;
+
+  --animate-fade-up: fade-up 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+  --animate-shimmer: shimmer 1.6s linear infinite;
+
+  @keyframes fade-up {
+    from { opacity: 0; transform: translateY(12px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes shimmer {
+    from { background-position: -200% 0; }
+    to { background-position: 200% 0; }
+  }
+}
+
+@layer base {
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    scroll-behavior: smooth;
+  }
+  body {
+    @apply bg-paper text-stone-800 font-sans dark:bg-ink dark:text-stone-200;
+  }
+  h1, h2, h3 {
+    @apply font-display tracking-tight text-stone-900 dark:text-stone-50;
+  }
+  ::selection {
+    @apply bg-brand-200 text-brand-950;
+  }
+  :focus-visible {
+    @apply outline-2 outline-offset-2 outline-brand-500;
+  }
+}
+
+@layer components {
+  .card {
+    @apply rounded-2xl border border-stone-200/80 bg-white shadow-sm shadow-stone-900/[0.03]
+      dark:border-white/10 dark:bg-white/[0.03] dark:shadow-none;
+  }
+  .skeleton {
+    @apply rounded-lg bg-stone-200/70 dark:bg-white/10;
+    background-image: linear-gradient(90deg, transparent, rgb(255 255 255 / 0.5), transparent);
+    background-size: 200% 100%;
+    animation: var(--animate-shimmer);
+  }
+  .dark .skeleton {
+    background-image: linear-gradient(90deg, transparent, rgb(255 255 255 / 0.06), transparent);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
