@@ -3,6 +3,7 @@ import { useSelector } from 'react-redux';
 import readSvg from '../photos/woman-reading-animate.svg';
 import pic7 from '../photos/7.jpg'
 import Button from './Button';
+import { supabaseEnabled } from '../conf/conf';
 import Container from './Container/Container';
 import { ArrowRightIcon, BookIcon, PenIcon, UsersIcon } from './Icons';
 
@@ -14,8 +15,8 @@ const features = [
   },
   {
     Icon: PenIcon,
-    title: 'Write beautifully',
-    body: 'A rich editor with images, lists, links and tables — so your ideas look as good as they sound.',
+    title: 'Write without signing up',
+    body: 'Post anonymously in seconds. Your posts are saved in your browser, and you can edit or delete them any time.',
   },
   {
     Icon: UsersIcon,
@@ -60,8 +61,8 @@ function Landing() {
                 </>
               ) : (
                 <>
-                  <Button to="/signup" size="lg">Start reading — it's free</Button>
-                  <Button to="/login" size="lg" variant="secondary">Sign in</Button>
+                  <Button to="/add-post" size="lg"><PenIcon className="size-4" /> Write anonymously</Button>
+                  <Button to="/all-posts" size="lg" variant="secondary">Browse posts <ArrowRightIcon className="size-4" /></Button>
                 </>
               )}
             </div>
@@ -97,10 +98,12 @@ function Landing() {
                 <h2 className="text-3xl font-semibold leading-tight sm:text-4xl">Ever wonder about…?</h2>
                 <p className="mt-4 text-lg leading-relaxed text-stone-600 dark:text-stone-400">
                   Or maybe you're searching for a story that truly resonates? This is where voices are heard.
-                  Create a free account and start exploring — what will you read first?
+                  {supabaseEnabled
+                    ? ' Write anonymously right now, or create a free account to publish for every reader.'
+                    : ' Share yours right now: no account needed.'}
                 </p>
-                <Button to="/signup" size="lg" className="mt-8">
-                  Join MegaBlog <ArrowRightIcon className="size-4" />
+                <Button to={supabaseEnabled ? '/signup' : '/add-post'} size="lg" className="mt-8">
+                  {supabaseEnabled ? 'Join MegaBlog' : 'Start writing'} <ArrowRightIcon className="size-4" />
                 </Button>
               </div>
             </div>

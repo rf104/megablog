@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { useParams } from 'react-router-dom'
 import { useSelector } from 'react-redux'
-import postService from '../supabase/posts'
+import { canEdit, getPost } from '../services/posts'
 import { Container, PostForm } from '../component'
 import { PageLoader } from '../component/Spinner'
 import NotFound from './NotFound'
@@ -14,15 +14,16 @@ function EditPost() {
 
     useEffect(() => {
         let ignore = false
-        postService.getPost(slug)
+        getPost(slug)
             .then((data) => { if (!ignore) setPost(data) })
             .catch(() => { if (!ignore) setPost(null) })
         return () => { ignore = true }
     }, [slug])
 
     if (post === undefined) return <PageLoader label="Loading post" />
-    // Only the author may edit; the database enforces this too, via row-level security.
-    if (post === null || post.userId !== userData?.id) return <NotFound />
+    // Browser posts can be edited from this browser; Supabase posts only by their author
+    // (the database enforces that too, via row-level security). Built-in posts are read-only.
+    if (!canEdit(post, userData)) return <NotFound />
 
     return (
         <div className="py-10">

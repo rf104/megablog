@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import parse from "html-react-parser";
 import { useSelector } from "react-redux";
-import postService from "../supabase/posts";
+import { canEdit, deletePost as removePost, getPost } from "../services/posts";
 import NotFound from "./NotFound";
 import { Button, Container } from "../component/index";
 import PostImage from "../component/PostImage";
@@ -38,12 +38,14 @@ export default function Post() {
 
     const userData = useSelector((state) => state.auth.userData);
 
-    const isAuthor = post && userData ? post.userId === userData.id : false;
+    const isAuthor = canEdit(post, userData);
+    // Browser posts have a chosen name; Supabase posts are labelled "By you" for their author.
+    const author = post?.source === 'remote' ? (isAuthor ? 'you' : '') : post?.authorName;
 
     useEffect(() => {
         let ignore = false;
         setPost(undefined);
-        postService.getPost(slug)
+        getPost(slug)
             .then((data) => { if (!ignore) setPost(data); })
             .catch(() => { if (!ignore) setPost(null); });
         return () => { ignore = true; };
@@ -53,8 +55,7 @@ export default function Post() {
         setDeleting(true);
         setDeleteError('');
         try {
-            await postService.deletePost(post.id);
-            postService.deleteFile(post.featuredImage);
+            await removePost(post);
             navigate("/all-posts");
         } catch (err) {
             setDeleteError(err.message);
@@ -85,11 +86,18 @@ export default function Post() {
                 </div>
 
                 <header className="mt-8 animate-fade-up">
-                    <StatusBadge status={post.status} />
+                    <div className="flex flex-wrap items-center gap-2">
+                        <StatusBadge status={post.status} />
+                        {post.source === 'local' && (
+                            <span className="rounded-full bg-stone-100 px-2.5 py-0.5 text-xs font-medium text-stone-600 dark:bg-white/10 dark:text-stone-300" title="Only visible in this browser">
+                                Saved in this browser
+                            </span>
+                        )}
+                    </div>
                     <h1 className="mt-3 text-4xl font-semibold leading-[1.1] sm:text-5xl">{post.title}</h1>
                     <div className="mt-5 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-stone-500 dark:text-stone-400">
-                        {isAuthor && <span className="font-medium text-stone-700 dark:text-stone-300">By you</span>}
-                        {isAuthor && <span aria-hidden="true">·</span>}
+                        {author && <span className="font-medium text-stone-700 dark:text-stone-300">By {author}</span>}
+                        {author && <span aria-hidden="true">·</span>}
                         {post.createdAt && <time dateTime={post.createdAt}>{formatDate(post.createdAt)}</time>}
                         <span aria-hidden="true">·</span>
                         <span className="inline-flex items-center gap-1">
@@ -100,14 +108,21 @@ export default function Post() {
             </Container>
 
             <div className="mx-auto mt-10 max-w-5xl px-4 sm:px-6 lg:px-8">
-                <div className="overflow-hidden rounded-2xl bg-stone-100 shadow-sm dark:bg-white/5">
-                    <PostImage
-                        path={post.featuredImage}
-                        postId={post.id}
-                        alt={post.title}
-                        className="aspect-[16/9] w-full object-cover"
-                    />
-                </div>
+                <figure>
+                    <div className="overflow-hidden rounded-2xl bg-stone-100 shadow-sm dark:bg-white/5">
+                        <PostImage
+                            path={post.featuredImage}
+                            postId={post.id}
+                            alt={post.title}
+                            className="aspect-[16/9] w-full object-cover object-center"
+                        />
+                    </div>
+                    {post.coverCredit && (
+                        <figcaption className="mt-2 text-right text-xs text-stone-500 dark:text-stone-400">
+                            Photo: {post.coverCredit} / Unsplash
+                        </figcaption>
+                    )}
+                </figure>
             </div>
 
             <Container size="narrow">
@@ -125,7 +140,7 @@ export default function Post() {
             <ConfirmDialog
                 open={confirmOpen}
                 title="Delete this post?"
-                description={deleteError || `“${post.title}” and its cover image will be permanently removed. This can't be undone.`}
+                description={deleteError || `“${post.title}”${post.source === 'local' ? ' will be removed from this browser' : ' and its cover image will be permanently removed'}. This can't be undone.`}
                 confirmLabel="Delete post"
                 loading={deleting}
                 onConfirm={deletePost}

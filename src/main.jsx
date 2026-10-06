@@ -6,7 +6,7 @@ import { Provider } from 'react-redux'
 import store from './store/store'
 import { createBrowserRouter, RouterProvider } from 'react-router-dom'
 import { AuthLayout, Login } from './component/index.js'
-import { missingConfig } from './conf/conf.js'
+import { missingConfig, supabaseEnabled } from './conf/conf.js'
 import Home from './Pages/Home.jsx'
 import AddPost from "./Pages/AddPost.jsx";
 import Signup from './Pages/Signup.jsx'
@@ -16,6 +16,11 @@ import AllPosts from './Pages/AllPost.jsx';
 import NotFound from './Pages/NotFound.jsx';
 import ConfigError from './Pages/ConfigError.jsx';
 import RouteError from './Pages/RouteError.jsx';
+
+// Sign in / sign up need Supabase; without it they explain how to set it up instead.
+const accountPage = (page) => supabaseEnabled
+  ? <AuthLayout authentication={false}>{page}</AuthLayout>
+  : <ConfigError missing={missingConfig} />
 
 const router = createBrowserRouter([
   {
@@ -29,43 +34,23 @@ const router = createBrowserRouter([
         },
         {
             path: "/login",
-            element: (
-                <AuthLayout authentication={false}>
-                    <Login />
-                </AuthLayout>
-            ),
+            element: accountPage(<Login />),
         },
         {
             path: "/signup",
-            element: (
-                <AuthLayout authentication={false}>
-                    <Signup />
-                </AuthLayout>
-            ),
+            element: accountPage(<Signup />),
         },
         {
             path: "/all-posts",
-            element: (
-                <AuthLayout authentication>
-                    <AllPosts />
-                </AuthLayout>
-            ),
+            element: <AllPosts />,
         },
         {
             path: "/add-post",
-            element: (
-                <AuthLayout authentication>
-                    <AddPost />
-                </AuthLayout>
-            ),
+            element: <AddPost />,
         },
         {
             path: "/edit-post/:slug",
-            element: (
-                <AuthLayout authentication>
-                    <EditPost />
-                </AuthLayout>
-            ),
+            element: <EditPost />,
         },
         {
             path: "/post/:slug",
@@ -81,12 +66,8 @@ const router = createBrowserRouter([
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
-    {missingConfig.length > 0 ? (
-      <ConfigError missing={missingConfig} />
-    ) : (
-      <Provider store={store}>
-        <RouterProvider router={router} />
-      </Provider>
-    )}
+    <Provider store={store}>
+      <RouterProvider router={router} />
+    </Provider>
   </StrictMode>,
 )

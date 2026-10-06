@@ -1,10 +1,11 @@
-import a from '../photos/1.jpg'
-import b from '../photos/2.jpg'
-import c from '../photos/3.jpg'
-import d from '../photos/4.jpg'
-import e from '../photos/5.jpg'
-import f from '../photos/6.jpg'
+import a from '../photos/covers/fallback-1.jpg'
+import b from '../photos/covers/fallback-2.jpg'
+import c from '../photos/covers/fallback-3.jpg'
+import d from '../photos/covers/fallback-4.jpg'
+import e from '../photos/covers/fallback-5.jpg'
+import f from '../photos/covers/fallback-6.jpg'
 
+// Neutral writing-desk photos for posts without a cover (Unsplash License).
 const fallbackImages = [a, b, c, d, e, f];
 
 // Stable fallback cover per post, so cards don't reshuffle on every render.

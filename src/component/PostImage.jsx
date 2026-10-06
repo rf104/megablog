@@ -1,11 +1,11 @@
 import React, { useState } from 'react'
-import postService from '../supabase/posts'
+import { imageUrl } from '../services/posts'
 import { fallbackImageFor } from '../utils/post'
 
-// Cover image from Supabase Storage, falling back to a bundled cover if it can't be loaded.
+// Post cover (Supabase Storage, browser-saved or built-in), falling back to a bundled cover if it can't be loaded.
 function PostImage({ path, postId, alt, className = '', ...props }) {
     const fallback = fallbackImageFor(postId || path || alt)
-    const [src, setSrc] = useState(() => postService.getImageUrl(path) || fallback)
+    const [src, setSrc] = useState(() => imageUrl(path) || fallback)
     const [loaded, setLoaded] = useState(false)
 
     return (

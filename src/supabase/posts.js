@@ -14,6 +14,7 @@ function toPost(row) {
         featuredImage: row.featured_image,
         status: row.status,
         userId: row.user_id,
+        source: 'remote',
         createdAt: row.created_at,
         updatedAt: row.updated_at,
     };

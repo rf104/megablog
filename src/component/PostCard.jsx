@@ -32,15 +32,16 @@ function PostCard({ id, slug, title, featuredImage, content = '', status, create
         to={`/post/${slug}`}
         className="group card grid overflow-hidden transition-all duration-300 hover:-translate-y-0.5 hover:shadow-xl hover:shadow-stone-900/5 md:grid-cols-5"
       >
-        <div className="relative aspect-[16/10] overflow-hidden bg-stone-100 md:col-span-3 md:aspect-auto md:min-h-80 dark:bg-white/5">
+        {/* On wide screens the photo fills its half of the card at any height, cropped from the centre. */}
+        <div className="relative aspect-[16/10] overflow-hidden bg-stone-100 md:col-span-3 md:aspect-auto md:min-h-96 dark:bg-white/5">
           <PostImage
             path={featuredImage}
             postId={id}
             alt={title}
-            className="absolute inset-0 size-full object-cover transition-transform duration-700 group-hover:scale-[1.03]"
+            className="absolute inset-0 size-full object-cover object-center transition-transform duration-700 group-hover:scale-[1.03]"
           />
         </div>
-        <div className="flex flex-col justify-center gap-4 p-6 sm:p-8 md:col-span-2">
+        <div className="flex min-w-0 flex-col justify-center gap-4 p-6 sm:p-8 md:col-span-2">
           <div className="flex items-center gap-2">
             <span className="rounded-full bg-brand-100 px-2.5 py-0.5 text-xs font-semibold text-brand-800 dark:bg-brand-400/15 dark:text-brand-300">
               Featured

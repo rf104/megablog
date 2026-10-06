@@ -2,18 +2,21 @@ import React, { useEffect, useState } from 'react'
 import { useDispatch } from 'react-redux'
 import { Outlet, useLocation } from 'react-router-dom'
 import authService from './supabase/auth'
+import { supabaseEnabled } from './conf/conf'
 import { login, logout } from './store/authSlice'
 import { Header, Footer, Logo } from './component/index'
 import Spinner from './component/Spinner'
 
 function App() {
-  const [loading, setLoading] = useState(true);
+  // Without Supabase there is no session to wait for: everyone is an anonymous visitor.
+  const [loading, setLoading] = useState(supabaseEnabled);
   const dispatch = useDispatch();
   const { pathname } = useLocation();
 
   // Supabase reports the current session immediately, then every sign-in, sign-out and
   // token refresh — including ones from other tabs and email-confirmation links.
   useEffect(() => {
+    if (!supabaseEnabled) return;
     return authService.onAuthChange((userData) => {
       if (userData) {
         dispatch(login({ userData }))

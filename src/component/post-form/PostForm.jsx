@@ -1,8 +1,9 @@
 import React, { useEffect, useCallback, useState } from 'react'
 import { useForm } from 'react-hook-form'
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { useSelector } from 'react-redux'
-import postService from '../../supabase/posts'
+import { imageUrl, savePost } from '../../services/posts'
+import { supabaseEnabled } from '../../conf/conf'
 import { Button, Input, RTE, Select } from '../index'
 import { AlertIcon, ImageIcon } from '../Icons'
 
@@ -14,7 +15,7 @@ function finalizeSlug(slug) {
 
 const MAX_IMAGE_BYTES = 5 * 1024 * 1024; // matches the bucket limit in supabase/schema.sql
 
-function ImagePicker({ registration, previewUrl, error, isEditing }) {
+function ImagePicker({ registration, previewUrl, error, isEditing, optional }) {
     return (
         <div>
             <span className="mb-1.5 inline-block text-sm font-medium text-stone-700 dark:text-stone-300">Cover image</span>
@@ -50,8 +51,10 @@ function ImagePicker({ registration, previewUrl, error, isEditing }) {
             </label>
             {error ? (
                 <p className="mt-1.5 text-sm text-red-600 dark:text-red-400">{error}</p>
-            ) : isEditing && (
-                <p className="mt-1.5 text-xs text-stone-500 dark:text-stone-400">Leave as-is to keep the current cover.</p>
+            ) : (isEditing || optional) && (
+                <p className="mt-1.5 text-xs text-stone-500 dark:text-stone-400">
+                    {isEditing ? 'Leave as-is to keep the current cover.' : "Optional. We'll pick a cover if you skip it."}
+                </p>
             )}
         </div>
     )
@@ -64,13 +67,16 @@ function PostForm({ post }) {
             slug: post?.slug || '',
             content: post?.content || '',
             status: post?.status || 'active',
+            authorName: post?.authorName === 'Anonymous' ? '' : post?.authorName || '',
         }
     })
 
     const navigate = useNavigate();
     const userData = useSelector((state) => state.auth.userData);
     const [submitError, setSubmitError] = useState('');
-    const [previewUrl, setPreviewUrl] = useState(post ? postService.getImageUrl(post.featuredImage) : '');
+    const [previewUrl, setPreviewUrl] = useState(post ? imageUrl(post.featuredImage) : '');
+    // Signed-out writers (and edits of their earlier posts) save to this browser instead of Supabase.
+    const isLocal = post ? post.source === 'local' : !userData;
 
     const imageFiles = watch('image');
 
@@ -85,31 +91,17 @@ function PostForm({ post }) {
 
     const submit = async (data) => {
         setSubmitError('');
-        const newImage = data.image?.[0];
-        let uploadedPath = null;
-
         try {
-            if (newImage) uploadedPath = await postService.uploadFile(newImage, userData.id);
-
-            const fields = {
+            const saved = await savePost(post, {
                 title: data.title,
                 slug: finalizeSlug(data.slug),
                 content: data.content,
                 status: data.status,
-                featuredImage: uploadedPath,
-            };
-
-            const saved = post
-                ? await postService.updatePost(post.id, fields)
-                : await postService.createPost({ ...fields, userId: userData.id });
-
-            // Replace the old cover only once the post has been saved with the new one.
-            if (post && uploadedPath) postService.deleteFile(post.featuredImage);
-
+                authorName: data.authorName,
+                image: data.image?.[0],
+            }, userData);
             navigate(`/post/${saved.slug}`);
         } catch (err) {
-            // Don't leave an orphaned image behind if saving the post failed.
-            if (uploadedPath) postService.deleteFile(uploadedPath);
             setSubmitError(err.message);
         }
     }
@@ -141,6 +133,14 @@ function PostForm({ post }) {
     return (
         <form onSubmit={handleSubmit(submit)} className="grid gap-6 lg:grid-cols-3" noValidate>
             <div className="card space-y-5 p-5 sm:p-6 lg:col-span-2">
+                {isLocal && !post && (
+                    <div className="rounded-xl border border-brand-200 bg-brand-50 px-4 py-3 text-sm text-brand-900 dark:border-brand-400/20 dark:bg-brand-400/10 dark:text-brand-100">
+                        You're writing anonymously. This post is saved in this browser only, so other readers won't see it.
+                        {supabaseEnabled && (
+                            <> <Link to="/login" className="font-medium underline underline-offset-2">Sign in</Link> to publish to everyone.</>
+                        )}
+                    </div>
+                )}
                 <Input
                     label="Title"
                     placeholder="Give your story a great title"
@@ -158,6 +158,15 @@ function PostForm({ post }) {
                         setValue("slug", slugTransform(e.currentTarget.value), { shouldValidate: true });
                     }}
                 />
+                {isLocal && (
+                    <Input
+                        label="Your name (optional)"
+                        placeholder="Anonymous"
+                        maxLength={60}
+                        hint="Shown on the post. Leave blank to stay anonymous."
+                        {...register("authorName")}
+                    />
+                )}
                 <RTE label="Content" name="content" control={control} defaultValue={getValues("content")} />
             </div>
 
@@ -166,13 +175,14 @@ function PostForm({ post }) {
                     <ImagePicker
                         registration={register("image", {
                             validate: {
-                                required: (files) => !!post || files?.length > 0 || 'Please add a cover image',
+                                required: (files) => !!post || isLocal || files?.length > 0 || 'Please add a cover image',
                                 size: (files) => !files?.[0] || files[0].size <= MAX_IMAGE_BYTES || 'Images must be 5 MB or smaller',
                             },
                         })}
                         previewUrl={previewUrl}
                         error={errors.image?.message}
                         isEditing={!!post}
+                        optional={isLocal}
                     />
                     <Select
                         options={["active", "inactive"]}

@@ -1,32 +1,30 @@
 import React, { useState, useEffect } from 'react'
-import { useSelector } from 'react-redux'
-import postService from '../supabase/posts'
+import { getPosts } from '../services/posts'
 import { Button, Container, PostCard } from '../component';
 import { PostCardSkeleton } from '../component/PostCard';
 import EmptyState from '../component/EmptyState';
 import Landing from '../component/Landing';
+import CloudNotice from '../component/CloudNotice';
 import { AlertIcon, ArrowRightIcon, PenIcon } from '../component/Icons';
 
 function Home() {
-    const authStatus = useSelector((state) => state.auth.status)
     const [posts, setPosts] = useState([])
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState('')
 
+    // Everyone can read: built-in posts, this browser's anonymous posts and (when configured) Supabase posts.
     useEffect(() => {
-        if (!authStatus) return
         let ignore = false
-        setLoading(true)
-        setError('')
-        postService.getPosts()
-            .then((data) => { if (!ignore) setPosts(data) })
+        getPosts()
+            .then(({ posts, remoteError }) => {
+                if (ignore) return
+                setPosts(posts)
+                if (remoteError) setError(remoteError)
+            })
             .catch((err) => { if (!ignore) setError(err.message) })
             .finally(() => { if (!ignore) setLoading(false) })
         return () => { ignore = true }
-    }, [authStatus])
-
-    // Visitors only see the landing page; reading requires an account.
-    if (!authStatus) return <Landing />
+    }, [])
 
     const [featured, ...rest] = posts
 
@@ -51,7 +49,7 @@ function Home() {
                         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
                             {Array.from({ length: 3 }).map((_, i) => <PostCardSkeleton key={i} />)}
                         </div>
-                    ) : error ? (
+                    ) : error && posts.length === 0 ? (
                         <EmptyState
                             icon={<AlertIcon className="size-6" />}
                             title="Couldn't load posts"
@@ -67,6 +65,7 @@ function Home() {
                         />
                     ) : (
                         <div className="space-y-6">
+                            {error && <CloudNotice message={error} />}
                             <div className="animate-fade-up">
                                 <PostCard {...featured} featured />
                             </div>

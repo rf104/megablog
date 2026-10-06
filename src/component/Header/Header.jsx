@@ -4,6 +4,7 @@ import { useSelector } from 'react-redux'
 import { Container, Logo, LogoutBtn, Button } from '../index'
 import { CloseIcon, MenuIcon, MoonIcon, PenIcon, SunIcon } from '../Icons'
 import useTheme from '../../hooks/useTheme'
+import { supabaseEnabled } from '../../conf/conf'
 
 function ThemeToggle() {
   const { theme, toggleTheme } = useTheme()
@@ -59,7 +60,7 @@ function Header() {
 
   const navItems = [
     { name: 'Home', slug: '/', active: true },
-    { name: 'All Posts', slug: '/all-posts', active: authStatus },
+    { name: 'All Posts', slug: '/all-posts', active: true },
   ]
 
   return (
@@ -98,8 +99,10 @@ function Header() {
               </div>
             ) : (
               <div className="hidden items-center gap-2 md:flex">
-                <Button to="/login" variant="ghost" size="sm">Sign in</Button>
-                <Button to="/signup" size="sm">Get started</Button>
+                {supabaseEnabled && <Button to="/login" variant="ghost" size="sm">Sign in</Button>}
+                <Button to="/add-post" size="sm">
+                  <PenIcon className="size-4" /> Write
+                </Button>
               </div>
             )}
             <button
@@ -141,8 +144,8 @@ function Header() {
                 </>
               ) : (
                 <>
-                  <Button to="/signup">Get started</Button>
-                  <Button to="/login" variant="secondary">Sign in</Button>
+                  <Button to="/add-post"><PenIcon className="size-4" /> Write a post</Button>
+                  {supabaseEnabled && <Button to="/login" variant="secondary">Sign in</Button>}
                 </>
               )}
             </div>

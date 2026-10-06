@@ -3,7 +3,8 @@ import { Button, Container, PostCard } from '../component/index'
 import { PostCardSkeleton } from '../component/PostCard'
 import EmptyState from '../component/EmptyState'
 import { AlertIcon, PenIcon, SearchIcon } from '../component/Icons'
-import postService from '../supabase/posts'
+import { getPosts } from '../services/posts'
+import CloudNotice from '../component/CloudNotice'
 import { stripHtml } from '../utils/post'
 
 function AllPost() {
@@ -15,8 +16,12 @@ function AllPost() {
     useEffect(() => {
         let ignore = false
         // status: null → every post this user may see (published posts plus their own drafts).
-        postService.getPosts({ status: null })
-            .then((data) => { if (!ignore) setPosts(data) })
+        getPosts({ status: null })
+            .then(({ posts, remoteError }) => {
+                if (ignore) return
+                setPosts(posts)
+                if (remoteError) setError(remoteError)
+            })
             .catch((err) => { if (!ignore) setError(err.message) })
             .finally(() => { if (!ignore) setLoading(false) })
         return () => { ignore = true }
@@ -57,7 +62,7 @@ function AllPost() {
                     <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
                         {Array.from({ length: 6 }).map((_, i) => <PostCardSkeleton key={i} />)}
                     </div>
-                ) : error ? (
+                ) : error && posts.length === 0 ? (
                     <EmptyState
                         icon={<AlertIcon className="size-6" />}
                         title="Couldn't load posts"
@@ -79,6 +84,8 @@ function AllPost() {
                         action={<Button variant="secondary" onClick={() => setQuery('')}>Clear search</Button>}
                     />
                 ) : (
+                    <>
+                    {error && <div className="mb-6"><CloudNotice message={error} /></div>}
                     <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
                         {filtered.map((ps, i) => (
                             <div key={ps.id} className="animate-fade-up" style={{ animationDelay: `${Math.min(i, 8) * 50}ms` }}>
@@ -86,6 +93,7 @@ function AllPost() {
                             </div>
                         ))}
                     </div>
+                    </>
                 )}
             </Container>
         </div>
